@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+/** @type {import('next').NextConfig} */
 
-## Getting Started
+const nextConfig = {
+  // 🔹 Enable React strict mode (recommended)
+  reactStrictMode: true,
 
-First, run the development server:
+  // 🔹 Output mode
+  // "standalone" → for Docker / Node server
+  // "export" → for static hosting
+  output: "standalone",
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+  // 🔹 Remove x-powered-by header (security)
+  poweredByHeader: false,
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+  // 🔹 Enable gzip compression
+  compress: true,
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+  // 🔹 Add base path if hosting under subfolder
+  // example.com/app
+  // basePath: "/app",
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+  // 🔹 Add trailing slash to all routes
+  // trailingSlash: true,
 
-## Learn More
+  // 🔹 CDN prefix (if using CDN)
+  // assetPrefix: "https://cdn.example.com",
 
-To learn more about Next.js, take a look at the following resources:
+  // 🔹 Production source maps
+  productionBrowserSourceMaps: false,
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+  // 🔹 Environment variables (build-time)
+  env: {
+    CUSTOM_API_URL: "https://api.example.com",
+  },
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+  // 🔹 Image optimization
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+    ],
+  },
 
-## Deploy on Vercel
+  // 🔹 Transpile packages (useful in monorepo)
+  // transpilePackages: ["@my/ui", "@my/utils"],
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+  // 🔹 ESLint config
+  eslint: {
+    ignoreDuringBuilds: false,
+  },
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+  // 🔹 TypeScript config
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+
+  // 🔹 Custom headers (security)
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+        ],
+      },
+    ];
+  },
+
+  // 🔹 Redirects
+  async redirects() {
+    return [
+      {
+        source: "/old-page",
+        destination: "/new-page",
+        permanent: true,
+      },
+    ];
+  },
+
+  // 🔹 Rewrites (API Proxy / URL Masking)
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: "https://api.example.com/:path*",
+      },
+    ];
+  },
+
+  // 🔹 Webpack customization (advanced)
+  webpack(config) {
+    config.resolve.fallback = { fs: false };
+    return config;
+  },
+
+  // 🔹 Experimental features
+  experimental: {
+    serverActions: true,
+  },
+};
+
+module.exports = nextConfig;
