@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "archiveAt" timestamp with time zone;

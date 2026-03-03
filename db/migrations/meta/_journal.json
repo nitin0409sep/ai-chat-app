@@ -15,6 +15,20 @@
       "when": 1772541972947,
       "tag": "0001_plain_venom",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772547843541,
+      "tag": "0002_charming_jigsaw",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1772547883713,
+      "tag": "0003_slow_omega_red",
+      "breakpoints": true
     }
   ]
 }
