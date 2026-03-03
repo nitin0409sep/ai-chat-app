@@ -10,7 +10,6 @@ type ChatMessage = {
 export async function getGroqChatCompletion(
     messages: ChatMessage[]
 ) {
-    console.log(messages);
     const completion = await groq.chat.completions.create({
         model: "llama-3.3-70b-versatile",
         temperature: 0,
