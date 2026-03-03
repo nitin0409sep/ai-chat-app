@@ -1,16 +1,32 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { useAuthStore } from "@/store/auth.store";
 
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+}
+
+interface Chat {
+  id: string;
+  title: string;
+  updatedAt: string;
+}
+
+const GREETING: Message = {
+  role: "assistant",
+  content: "Hello! How can I help you today?",
+};
+
 export default function ChatPage() {
   const { user, fetchUser, logout, isLoading: authLoading } = useAuthStore();
+  const queryClient = useQueryClient();
 
-  const [messages, setMessages] = useState([
-    { role: "assistant", content: "Hello! How can I help you today?" },
-  ]);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([GREETING]);
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -19,14 +35,34 @@ export default function ChatPage() {
     fetchUser();
   }, [fetchUser]);
 
+  // Fetch chat list for sidebar
+  const { data: chatsData } = useQuery({
+    queryKey: ["chats"],
+    queryFn: () => api.get("/api/chats").then((res) => res.data),
+    enabled: !authLoading,
+  });
+  const chatList: Chat[] = chatsData?.chats ?? [];
+
+  // Send message mutation
   const { mutate: sendChat, isPending } = useMutation({
-    mutationFn: (message: string) =>
-      api.post("/api/chat", { message }).then((res) => res.data),
+    mutationFn: (payload: { message: string; chatId: string | null }) =>
+      api
+        .post("/api/chat", {
+          message: payload.message,
+          chatId: payload.chatId,
+        })
+        .then((res) => res.data),
     onSuccess: (data) => {
       setMessages((prev) => [
         ...prev,
         { role: data.role, content: data.content },
       ]);
+      // Set chatId from server response (important for first message)
+      if (data.chatId && !activeChatId) {
+        setActiveChatId(data.chatId);
+      }
+      // Refresh sidebar chat list
+      queryClient.invalidateQueries({ queryKey: ["chats"] });
     },
   });
 
@@ -36,7 +72,25 @@ export default function ChatPage() {
     const message = input;
     setMessages((prev) => [...prev, { role: "user", content: message }]);
     setInput("");
-    sendChat(message);
+    sendChat({ message, chatId: activeChatId });
+    inputRef.current?.focus();
+  };
+
+  // Load messages when switching to an existing chat
+  const loadChat = async (chatId: string) => {
+    if (chatId === activeChatId) return;
+    setActiveChatId(chatId);
+    try {
+      const { data } = await api.get(`/api/chats/${chatId}/messages`);
+      setMessages(data.messages);
+    } catch {
+      setMessages([GREETING]);
+    }
+  };
+
+  const startNewChat = () => {
+    setActiveChatId(null);
+    setMessages([GREETING]);
     inputRef.current?.focus();
   };
 
@@ -114,7 +168,10 @@ export default function ChatPage() {
 
         {/* New chat button */}
         <div className="p-3">
-          <button className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] transition-colors text-sm text-gray-300 hover:text-white">
+          <button
+            onClick={startNewChat}
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] transition-colors text-sm text-gray-300 hover:text-white"
+          >
             <svg
               width="14"
               height="14"
@@ -138,9 +195,24 @@ export default function ChatPage() {
             Recent
           </p>
           <div className="space-y-0.5">
-            <div className="px-3 py-2 rounded-lg bg-white/[0.04] text-sm text-gray-300 truncate">
-              Current conversation
-            </div>
+            {chatList.length === 0 && (
+              <p className="px-3 py-2 text-sm text-gray-600">
+                No conversations yet
+              </p>
+            )}
+            {chatList.map((chat) => (
+              <button
+                key={chat.id}
+                onClick={() => loadChat(chat.id)}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm truncate transition-colors ${
+                  activeChatId === chat.id
+                    ? "bg-white/[0.08] text-white"
+                    : "text-gray-400 hover:bg-white/[0.04] hover:text-gray-300"
+                }`}
+              >
+                {chat.title || "New conversation"}
+              </button>
+            ))}
           </div>
         </div>
 
