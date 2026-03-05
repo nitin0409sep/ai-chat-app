@@ -10,10 +10,39 @@ services:
       POSTGRES_USER: process.env.DB_USER
       POSTGRES_PASSWORD: process.env.DB_PASSWORD
       POSTGRES_DB: process.env.DB_NAME
-
+    
+    networks:
+      - redis-network
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-volumes:
+  redis:
+    image: redis:7-alpine 
+    container_name: redis
+    restart: on-failure:3
+    ports:
+      - "6379:6379" # Maps port 6379 on the host to port 6379 in the container
+    volumes:
+      - redis-data:/data # Named volume for data persistence
+    command: redis-server --appendonly yes # Enables AOF persistence
+    networks:
+      - redis-network
 
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    restart: on-failure:3
+    ports:
+      - "5540:5540"
+    networks:
+      - redis-network
+
+networks:
+  redis-network:
+    driver: bridge
+
+volumes:
   pgdata:
+
+  redis-data:
+    driver: local
