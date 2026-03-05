@@ -61,11 +61,11 @@ TAVILY_API_KEY=         # Get from https://tavily.com
 DEBUG=false
 
 # Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=ai_chat
-DB_PASSWORD=ai_chat_password
-DB_NAME=ai_chat
+DB_HOST=
+DB_PORT=
+DB_USER=
+DB_PASSWORD=
+DB_NAME=
 
 # Auth
 JWT_SECRET=             # Generate with: openssl rand -hex 32
